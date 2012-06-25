@@ -12,3 +12,11 @@ Many thanks to Michael Bauer for writing this script an to my boss at
 <a href="http://www.science-computing.de">science + computing ag</a>, 
 who allowed me to publish the script under the GPL.
 
+winWrapper
+----------
+
+An universal wrapper for python scripts and python.exe.
+Many thanks to my boss at 
+<a href="http://www.science-computing.de">science + computing ag</a>, 
+who allowed me to publish the script under the GPL.
+
