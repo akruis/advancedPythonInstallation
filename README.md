@@ -20,3 +20,13 @@ Many thanks to my boss at
 <a href="http://www.science-computing.de">science + computing ag</a>, 
 who allowed me to publish the script under the GPL.
 
+sitecustomize.py
+----------------
+
+A sample sitecustomize.py module. It demonstrates how to 
+
+* set the DLL directory
+* monitor the live of  the parent process
+* set environment variables for GLIB, GTK, ...
+
+This file has no copyright assigned and is placed in the Public Domain. 
