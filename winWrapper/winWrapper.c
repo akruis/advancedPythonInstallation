@@ -35,10 +35,10 @@
 #include <string.h>
 
 
-#define LIBEXECDIR "..\\libexec\\"
+#define LIBEXECDIR "libexec\\"
 #define INTERPRETER_NAME "python.exe"
 #define INTERPRETERW_NAME "pythonw.exe"
-#define INTERPRETER_SCRIPT_DIR "..\\libexec\\"
+#define INTERPRETER_SCRIPT_DIR "libexec\\"
 #define INTERPRETER_SCRIPT_EXT_DEFAULT ".pyc"
 #define INTERPRETER_SCRIPT_EXT_VAR "SCWRAPPER_INTERPRETER_EXT"
 #define INTERPRETER_OPTIONS_ENV_PREFIX "SCWRAPPER_INTERPRETER_OPTIONS_"
@@ -188,9 +188,10 @@ static int runCommand(void)
 {
 	LPTSTR name2;
 	LPTSTR p;
-	LPCTSTR p2;
-	LPTSTR p3;
+    LPCTSTR baseName;
 	LPCTSTR exeName;
+
+    /* _putts(TEXT("Bitte Taste")); _gettc(stdin); */
 
 	/*** get the name and path of this executable ***/
 	exeName = getExe();
@@ -205,16 +206,20 @@ static int runCommand(void)
 	if (!p) {
 		ErrorExit(TEXT("_tcsrchr"));
 	}
-	/* copy up and including to the last '\\' */
-	for(p2=exeName, p3=name2; p2 != p; p2++, p3++) {
-		*p3 = *p2;
+    baseName=p+1;
+    *p = TEXT('\0');
+	p = _tcsrchr(exeName, TEXT('\\'));
+	if (!p) {
+		ErrorExit(TEXT("_tcsrchr 2"));
 	}
-	*(p3++) = *(p2++);
+    *(p+1) = TEXT('\0');
+
+	/* copy up and including to the last '\\' */
+    _tcscpy(name2, exeName);
 	/* append libexec */
-	_tcscpy(p3, TEXT(LIBEXECDIR));
-	p3 += _tcslen(TEXT(LIBEXECDIR));
+	_tcscat(name2, TEXT(LIBEXECDIR));
 	/* append the rest of the filename */
-	_tcscpy(p3, p2);
+	_tcscat(name2, baseName);
 
 	/* _fputts(name2, stdout); */
 
@@ -358,8 +363,6 @@ static int runCommand(void)
 {
 	LPTSTR name2;
 	LPTSTR p;
-	LPTSTR p2;
-	LPTSTR p3;
 	LPTSTR exeName;
 	LPTSTR baseName;  /* basename of exe with extention */
 	LPTSTR baseNameWoExt;  /* basename of exe without extention */
@@ -386,23 +389,25 @@ static int runCommand(void)
 	if (!p) {
 		ErrorExit(TEXT("_tcsrchr"));
 	}
-	/* copy up and including to the last '\\' */
-	for(p2=exeName, p3=name2; p2 != p; p2++, p3++) {
-		*p3 = *p2;
+	baseName = p+1;
+	*p = TEXT('\0');
+	p = _tcsrchr(exeName, TEXT('\\'));
+	if (!p) {
+		ErrorExit(TEXT("_tcsrchr 2"));
 	}
-	*(p3++) = *p2;
+    *(p+1) = TEXT('\0');
+
+    /* copy up and including to the last '\\' */
+    _tcscpy(name2, exeName);
 	/* append libexec */
-	_tcscpy(p3, TEXT(LIBEXECDIR));
-	p3 += _tcslen(TEXT(LIBEXECDIR));
+	_tcscat(name2, TEXT(LIBEXECDIR));
 	/* append the rest of the filename */
-	_tcscpy(p3, getInterpreter());
+	_tcscat(name2, getInterpreter());
 
 	/* build the dirname and basename.
 	   exeName becomes the dirname */
-	*p = TEXT('\0');
-	baseName = p+1;
 	baseNameWoExt = _tcsdup(baseName);
-	if (!baseName) {
+	if (!baseNameWoExt) {
 		ErrorExit(TEXT("_tcsdup"));
 	}
 	p = _tcsrchr(baseNameWoExt, TEXT('.'));
@@ -424,13 +429,12 @@ static int runCommand(void)
 	}
 
 	/* build the script */
-	script = (LPTSTR) malloc((_tcslen(exeName) + 1 + _tcslen(TEXT(INTERPRETER_SCRIPT_DIR)) + 
-		_tcslen(baseNameWoExt) + _tcslen(interpreterScriptExt)) * sizeof(TCHAR));
+	script = (LPTSTR) malloc((_tcslen(exeName) + _tcslen(TEXT(INTERPRETER_SCRIPT_DIR)) + 
+		_tcslen(baseNameWoExt) + _tcslen(interpreterScriptExt) + 1) * sizeof(TCHAR));
 	if (!script) {
 		ErrorExit(TEXT("malloc (script)"));
 	}
 	_tcscpy(script, exeName);
-	_tcscat(script, TEXT("\\"));
 	_tcscat(script, TEXT(INTERPRETER_SCRIPT_DIR));
 	_tcscat(script, baseNameWoExt);
 	_tcscat(script, interpreterScriptExt);
@@ -450,7 +454,7 @@ static int runCommand(void)
 	/* finally build it all */
 	cmdLine = (LPTSTR) malloc(( _tcslen(arg0) + 1
 		+ _tcslen(interpreterOptions) + 1 
-		+ _tcslen(args) ) 
+		+ _tcslen(args) + 1) 
 		* sizeof(TCHAR));
 	if (!cmdLine) {
 		ErrorExit(TEXT("malloc (cmdLine)"));
@@ -477,7 +481,10 @@ static int runCommand(void)
 #endif
 
 int _tmain(int argc, _TCHAR* argv[]) {
-	return runCommand();
+    UINT exitCode;
+    exitCode = runCommand();
+    TerminateProcess(GetCurrentProcess(), exitCode);
+    return exitCode;
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
@@ -485,7 +492,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
+    UINT exitCode;
 	gui_available = 1;
-	return runCommand();
+    exitCode = runCommand();
+    TerminateProcess(GetCurrentProcess(), exitCode);
+    return exitCode;
 }
 
